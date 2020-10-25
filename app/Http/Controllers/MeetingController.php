@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Meeting;
 
 class MeetingController extends Controller
 {
@@ -13,7 +14,20 @@ class MeetingController extends Controller
      */
     public function index()
     {
-        return 'MeetingController index';
+        $meetings = Meeting::all();
+        foreach ($meetings as $meeting) {
+            $meeting->view_meeting = [
+                'href' => 'api/v1/meeting' . $meeting->$id,
+                'method' => 'GET',
+            ];
+
+            $response = [
+                "msg" => "list semua meetings",
+                "meeting" => $meetings
+            ];
+
+            return response()->json($response, 200);
+        }
     }
 
     /**
@@ -39,30 +53,34 @@ class MeetingController extends Controller
             'user_id' => 'required',
         ]);
 
-
-
         $title = $request->input('title');
         $description = $request->input('description');
         $time = $request->input('time');
         $user_id = $request->input('user_id');
 
-        $meeting = [
+        $meeting = new Meeting([
+            'time' => $time,
             'title' => $title,
             'description' => $description,
-            'time' => $time,
-            'user_id' => $user_id,
-            'view_meeting' => [
-                'href' => 'api/v1/meeting/1',
-                'method' => 'GET'
-            ]
-        ];
+        ]);
 
+        if ($meeting->save()) {
+            $meeting->Users()->attach($user_id);
+            $meeting->view_meeting = [
+                'href' => 'api/v1/meeting' . $meeting->$id,
+                'method' => 'GET',
+            ];
+
+            $message = [
+                "msg" => "Meetings Created",
+                "meeting" => $meetings
+            ];
+            return response()->json($message, 201);
+        }
         $response = [
-            "msg" => "Meeting Created",
-            "data" => $meeting
+            "msg" => "Error Meetings Created"
         ];
-
-        return response()->json($response, 201);
+        return response()->json($response, 404);
     }
 
     /**
