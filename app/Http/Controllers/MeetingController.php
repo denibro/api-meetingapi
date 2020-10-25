@@ -17,7 +17,7 @@ class MeetingController extends Controller
         $meetings = Meeting::all();
         foreach ($meetings as $meeting) {
             $meeting->view_meeting = [
-                'href' => 'api/v1/meeting' . $meeting->$id,
+                'href' => 'api/v1/meeting/' . $meeting->id,
                 'method' => 'GET',
             ];
 
@@ -67,13 +67,13 @@ class MeetingController extends Controller
         if ($meeting->save()) {
             $meeting->Users()->attach($user_id);
             $meeting->view_meeting = [
-                'href' => 'api/v1/meeting' . $meeting->$id,
+                'href' => 'api/v1/meeting/' . $meeting->id,
                 'method' => 'GET',
             ];
 
             $message = [
                 "msg" => "Meetings Created",
-                "meeting" => $meetings
+                "meeting" => $meeting
             ];
             return response()->json($message, 201);
         }
@@ -91,7 +91,17 @@ class MeetingController extends Controller
      */
     public function show($id)
     {
-        return 'MeetingController show';
+        $meeting = Meeting::with('users')->where('id', $id)->firstOrFail();
+        $meeting->view_meeting = [
+            'href' => 'api/v1/meeting',
+            'method' => 'GET',
+        ];
+
+        $response = [
+            "msg" => "Meetings Information",
+            "meeting" => $meeting
+        ];
+        return response()->json($response, 200);
     }
 
     /**
@@ -103,7 +113,41 @@ class MeetingController extends Controller
      */
     public function update(Request $request, $id)
     {
-        return 'MeetingController update';
+        $this->validate($request, [
+            'title' => 'required',
+            'description' => 'required',
+            'time' => 'required',
+            'user_id' => 'required',
+        ]);
+
+        $title = $request->input('title');
+        $description = $request->input('description');
+        $time = $request->input('time');
+        $user_id = $request->input('user_id');
+
+        $meeting = Meeting::with('users')->findOrFail($id);
+
+        if (!$meeting->users()->where('users.id', $user_id)->first()) {
+            return response()->json(['msg' => 'user tidak terdaftar dalam meeting, update gagal'], 401);
+        };
+
+        $meeting->time = $time;
+        $meeting->title = $title;
+        $meeting->description = $description;
+
+        if (!$meeting->update()) {
+            return response()->json(['msg' => 'data gagal update'], 401);
+        }
+        $meeting->view_meeting = [
+            'href' => 'api/v1/meeting' . $meeting->id,
+            'method' => 'GET',
+        ];
+
+        $response = [
+            "msg" => "Meetings Update",
+            "meeting" => $meeting
+        ];
+        return response()->json($response, 200);
     }
 
     /**
@@ -114,6 +158,24 @@ class MeetingController extends Controller
      */
     public function destroy($id)
     {
-        return 'MeetingController destroy';
+        $meeting = Meeting::findOrFail($id);
+        $users = $meeting->users;
+        $meeting->users()->detach();
+
+        if (!$meeting->delete()) {
+            foreach ($users as $user) {
+                $meeting->users()->attach($user);
+            }
+            return response()->json(['msg' => 'delete data gagal'], 404);
+        }
+        $response = [
+            "msg" => "Meetings Delete",
+            "Create" => [
+                'href' => 'api/v1/meeting',
+                'method' => 'POST',
+                'params' => 'title, time, description',
+            ]
+        ];
+        return response()->json($response, 200);
     }
 }
