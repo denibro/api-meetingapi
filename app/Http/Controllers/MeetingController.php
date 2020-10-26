@@ -169,7 +169,7 @@ class MeetingController extends Controller
             return response()->json(['msg' => 'delete data gagal'], 404);
         }
         $response = [
-            "msg" => "Meetings Delete",
+            "msg" => "Meetings Delete" . " " . $meeting->id,
             "Create" => [
                 'href' => 'api/v1/meeting',
                 'method' => 'POST',
