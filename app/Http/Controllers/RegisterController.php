@@ -45,9 +45,9 @@ class RegisterController extends Controller
         $user->meetings()->attach($meeting);
 
         $response = [
-            "msg" => "User terdaftar untuk meeting",
-            "meeting" => $meeting,
+            "msg" => "User siap terdaftar untuk meeting",
             "user" => $user,
+            "meeting" => $meeting,
             'unregister' => [
                 'href' => 'api/v1/meeting/registration/' . $meeting->id,
                 'method' => "DELETE",
@@ -71,8 +71,8 @@ class RegisterController extends Controller
         $response = [
             "msg" => "User dihapus untuk meeting",
             "meeting" => $meeting,
-            "user" => tdb,
-            'unregister' => [
+            "user" => "tdb",
+            'register' => [
                 'href' => 'api/v1/meeting/registration',
                 'method' => "POST",
                 'params' => 'user_id, meeting_id',
